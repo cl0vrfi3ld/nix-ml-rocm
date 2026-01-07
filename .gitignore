@@ -1,0 +1,25 @@
+# Nix artifacts
+result
+result-*
+.direnv/
+.devenv/
+
+# Python artifacts
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+env/
+venv/
+*.egg-info/
+
+# Environment Variables (Safety First)
+.env
+.env.*
+
+# Editor debris
+.vscode/
+.idea/
+*.swp
+
+.neurons
