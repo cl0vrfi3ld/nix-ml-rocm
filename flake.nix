@@ -42,7 +42,15 @@
 
       in
       {
-        # We merge the package sets for all requested Python versions
+        # provide a dev shell env for working on the builder script
+        devShells.default = pkgs.mkShell {
+          packages = with pkgs; [
+            python312
+            cachix
+          ];
+        };
+
+        # merge the package sets for all requested Python versions
         packages =
           (mkMlPackages "311")
           // (mkMlPackages "312")
