@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 
 from pathlib import Path
+from typing import Literal, Any
+import argparse
 import subprocess
 import shutil
 import sys
 import os
 import datetime
-from typing import Literal, Any
 
 CACHE_NAME: str = "ml-rocm"
 SUPPORTED_PYTHON_VERSIONS = Literal["311", "312"]  # TODO: add 3.13 support
@@ -55,10 +56,11 @@ def parse_apply_dotenv(file_path: Path) -> dict[str, str]:
     parsed: dict[str, str] = {}
     for l in lines:
         l = l.strip()
-        if not l or l.startswith("#"): continue # Skip empty lines and comments
+        if not l or l.startswith("#"):
+            continue  # Skip empty lines and comments
         k, v = l.split("=", 1)
         _ = parsed.setdefault(k, v)
-    
+
     log("INFO", "applying parsed values")
 
     for name, value in parsed.items():
@@ -83,7 +85,7 @@ def check_env():
     if dotenvf.exists():
         log("INFO", "found .env file", path=dotenvf.absolute())
         # parse found file
-        dotenv_vars = parse_apply_dotenv(dotenvf)        
+        dotenv_vars = parse_apply_dotenv(dotenvf)
 
 
 def mk_target(pkg: str, pyv: SUPPORTED_PYTHON_VERSIONS) -> str:
@@ -91,41 +93,68 @@ def mk_target(pkg: str, pyv: SUPPORTED_PYTHON_VERSIONS) -> str:
     return f".#{pkg}-py{pyv}"
 
 
-def build_package_batch(targets: list[str]):
+def build_package_batch(targets: list[str], revision: str | None = None):
     """ build all packages for the python ecosystem """
+    rev = revision or os.environ.get("NIXPKGS_REV")
     command = [
         "cachix", "watch-exec", CACHE_NAME, "--",
         "nix", "build",
         "--keep-going",
         "--print-build-logs"
-    ] + targets
+    ]
+    if rev:
+        log("WARN", "Overriding nixpkgs revision", revision=rev)
+        command.extend(["--override-input", "nixpkgs",
+                       f"github:nixos/nixpkgs/{rev}"])
+    command.extend(targets)
     attempted_ids = ", ".join(targets)
     log("INFO", "building packages", targets=attempted_ids)
     _ = subprocess.run(command, check=True)
 
 
+def build_arg_parser() -> argparse.ArgumentParser:
+    """ builds an argparse parser for the script """
+    parser = argparse.ArgumentParser()
+    # add parameter to overwrite the nixpkgs revision to be built against
+    parser.add_argument(
+        "-r", "--revision", help="Override the nixpkgs revision with the provided git commit id")
+    # add option for a test build
+    parser.add_argument(
+        "-T", "--test",
+        help="Build and push a test artifact to verify environment configuration",
+        action="store_true"
+    )
+    return parser
+
+
 def main() -> None:
     """ the main logic loop """
     check_env()
-    
+    parser = build_arg_parser()
+    args = parser.parse_args()
+    # check for arguments that override the nixpkgs revision
+    rev: str | None = args.revision
+    if args.revision:
+        log("INFO",
+            f"building python packages against nixpkgs@{args.revision}")
     # check for arguments to run a test build
-    if len(sys.argv) > 1 and sys.argv[1] == "test":
+    if args.test:
         log("INFO", "Running diagnostic test build...")
-        build_package_batch([".#test-artifact"])
+        build_package_batch([".#test-artifact"], revision=rev)
         return
-    
-    log("INFO", "building python packages")
+
     py_pkg_ids: list[str] = []
     for v in PYTHON_VERSIONS:
         for p in PYTHON_PACKAGES:
             py_pkg_ids.append(mk_target(pkg=p, pyv=v))
 
     try:
-        build_package_batch(py_pkg_ids)
+        build_package_batch(py_pkg_ids, revision=rev)
     except subprocess.CalledProcessError as err:
         attempted_ids = ", ".join(py_pkg_ids)
         log("ERROR", "error building packages",
             targets=attempted_ids, error=str(err))
+
 
 if __name__ == "__main__":
     main()
