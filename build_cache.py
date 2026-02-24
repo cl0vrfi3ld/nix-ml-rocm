@@ -10,9 +10,9 @@ import os
 import datetime
 
 CACHE_NAME: str = "ml-rocm"
-SUPPORTED_PYTHON_VERSIONS = Literal["311", "312"]  # TODO: add 3.13 support
+SUPPORTED_PYTHON_VERSIONS = Literal["312", "313"]
 PYTHON_VERSIONS: list[SUPPORTED_PYTHON_VERSIONS] = [
-    "311", "312"]  # TODO: add 3.13 support
+    "312", "313"]
 PYTHON_PACKAGES: list[str] = ["torch", "torchaudio", "torchvision"]
 
 
