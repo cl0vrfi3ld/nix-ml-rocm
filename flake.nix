@@ -52,24 +52,27 @@
         devShells.default = pkgs.mkShell {
           packages = runtimeDeps;
         };
-
+      
         apps.build-cache = {
           type = "app";
-          program = "${pkgs.writeShellApplication {
-            name = "build-cache";
-            runtimeInputs = runtimeDeps;
-            text = ''
-              # ensure build script exists in PWD
-              if [ ! -f "build_cache.py" ]; then
-                echo "Build script was not found in current directory"
-                exit 1
-              fi
+          program = "${
+            pkgs.writeShellApplication {
+              name = "build-cache";
+              runtimeInputs = runtimeDeps;
+              text = ''
+                # ensure build script exists in PWD
+                if [ ! -f "build_cache.py" ]; then
+                  echo "Build script was not found in current directory"
+                  exit 1
+                fi
 
-              # run build script
-              python3 build_cache.py "$@"
-            '';
-          }}/bin/build-cache";
+                # run build script
+                python3 build_cache.py "$@"
+              '';
+            }
+          }/bin/build-cache";
         };
+        apps.default = self.apps.build-cache;
 
         # merge the package sets for all requested Python versions
         packages =
