@@ -78,7 +78,7 @@
         packages =
           (mkMlPackages "311")
           // (mkMlPackages "312")
-          // (mkMlPackages "313") # 3.13 is experimental
+          // (mkMlPackages "313")
           // {
             # ---------------------------------------------------
             # DIAGNOSTIC TARGET
@@ -89,6 +89,26 @@
               Timestamp: ${toString self.lastModified}
               System: ${system}
             '';
+          };
+        # custom build groups for convenience
+        buildGroups =
+          let
+            # Grab all package names once
+            allPackages = builtins.attrNames self.packages.${system};
+
+            # filters all packages by their prefix
+            filterByPrefix = prefix: builtins.filter (name: pkgs.lib.hasPrefix "${prefix}-" name) allPackages;
+          in
+          {
+            # build by python version
+            py312 = builtins.attrNames (mkMlPackages "312");
+            py313 = builtins.attrNames (mkMlPackages "313");
+
+            core-ml = filterByPrefix "torch-";
+            vision = filterByPrefix "torchvision-";
+            audio = filterByPrefix "torchaudio-";
+
+            all = builtins.filter (name: name != "test-artifact") allPackages;
           };
       }
     );
