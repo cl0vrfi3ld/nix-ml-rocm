@@ -1,0 +1,35 @@
+name: Build and update nix-ml-rocm Cache
+
+on:
+  schedule:
+    - cron: '0 3 * * *'
+  workflow_dispatch:
+
+jobs:
+  build-cache:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout local repository
+        uses: actions/checkout@v5
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v31
+
+      - name: Setup Cachix
+        uses: cachix/cachix-action@v15
+        with:
+          name: nix-ml-rocm
+          authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
+          extraPullNames: nix-community
+
+      - name: Trigger Flake Runner
+        run: |
+          LATEST_REV_UNSTABLE=$(curl -s "https://api.github.com/repos/NixOS/nixpkgs/commits/nixos-unstable" | jq -r '.sha')
+          
+          if [ -z "$LATEST_REV_UNSTABLE" ] || [ "$LATEST_REV_UNSTABLE" == "null" ]; then
+            echo "Failed to fetch nixpkgs revision."
+            exit 1
+          fi
+
+          echo "Targeting nixos-unstable revision: $LATEST_REV_UNSTABLE"          
+          nix run .#build-cache -- -r "$LATEST_REV_UNSTABLE"
