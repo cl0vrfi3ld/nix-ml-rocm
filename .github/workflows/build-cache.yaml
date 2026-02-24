@@ -1,4 +1,4 @@
-name: Build and update nix-ml-rocm Cache
+name: Build and update ml-rocm Cache
 
 on:
   schedule:
@@ -18,7 +18,7 @@ jobs:
       - name: Setup Cachix
         uses: cachix/cachix-action@v15
         with:
-          name: nix-ml-rocm
+          name: ml-rocm
           authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
           extraPullNames: nix-community
 
