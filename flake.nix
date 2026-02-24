@@ -39,15 +39,36 @@
             "torchaudio-py${pyVersion}" = ps.torchaudio;
             "torchvision-py${pyVersion}" = ps.torchvision;
           };
-
+        # runtime deps
+        runtimeDeps = with pkgs; [
+          python312
+          cachix
+          curl
+          jq
+        ];
       in
       {
         # provide a dev shell env for working on the builder script
         devShells.default = pkgs.mkShell {
-          packages = with pkgs; [
-            python312
-            cachix
-          ];
+          packages = runtimeDeps;
+        };
+
+        apps.build-cache = {
+          type = "app";
+          program = "${pkgs.writeShellApplication {
+            name = "build-cache";
+            runtimeInputs = runtimeDeps;
+            text = ''
+              # ensure build script exists in PWD
+              if [ ! -f "build_cache.py" ]; then
+                echo "Build script was not found in current directory"
+                exit 1
+              fi
+
+              # run build script
+              python3 build_cache.py "$@"
+            '';
+          }}/bin/build-cache";
         };
 
         # merge the package sets for all requested Python versions
