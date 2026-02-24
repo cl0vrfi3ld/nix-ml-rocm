@@ -75,7 +75,7 @@
         packages =
           (mkMlPackages "311")
           // (mkMlPackages "312")
-          // (mkMlPackages "313") # 3.13 is experimental; expect turbulence.
+          // (mkMlPackages "313") # 3.13 is experimental
           // {
             # ---------------------------------------------------
             # DIAGNOSTIC TARGET
@@ -83,7 +83,7 @@
             # ---------------------------------------------------
             test-artifact = pkgs.writeText "cachix-test" ''
               This is a test artifact for ml-rocm.
-              Timestamp: ${builtins.toString self.lastModified}
+              Timestamp: ${toString self.lastModified}
               System: ${system}
             '';
           };
