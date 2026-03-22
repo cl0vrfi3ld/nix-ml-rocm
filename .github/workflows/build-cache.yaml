@@ -32,4 +32,4 @@ jobs:
           fi
 
           echo "Targeting nixos-unstable revision: $LATEST_REV_UNSTABLE"          
-          nix run .#build-cache -- -r "$LATEST_REV_UNSTABLE"
+          CACHIX_AUTH_TOKEN=${{ secrets.CACHIX_AUTH_TOKEN }} nix run .#build-cache -- -R "$LATEST_REV_UNSTABLE"

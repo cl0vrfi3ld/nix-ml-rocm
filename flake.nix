@@ -97,7 +97,7 @@
             allPackages = builtins.attrNames self.packages.${system};
 
             # filters all packages by their prefix
-            filterByPrefix = prefix: builtins.filter (name: pkgs.lib.hasPrefix "${prefix}-" name) allPackages;
+            filterByPrefix = prefix: builtins.filter (name: pkgs.lib.hasPrefix prefix name) allPackages;
           in
           {
             # build by python version
